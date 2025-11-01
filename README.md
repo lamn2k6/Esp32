@@ -63,66 +63,92 @@ Lưu tên mạng và mật khẩu mà người dùng nhập qua Serial Monitor.
 Dạng `String` giúp dễ dàng thao tác chuỗi (trim, đọc từ Serial...).  
 
 3. Hàm `setup()`  
-`Serial.begin(115200);`: Khởi động cổng giao tiếp Serial với tốc độ 115200 baud để giao tiếp với máy tính.    
-`WiFi.mode(WIFI_STA);`: Cấu hình ESP32 ở chế độ STA (Station) cho phép ESP32 kết nối vào mạng WiFi có sẵn.
-
-4. Nhập SSID và Password
 ```python
-Serial.println("\nNhập tên wifi");
-while (ssid_st.length() == 0) {
-  ssid_st = Serial.readString();
-  ssid_st.trim();
-}
+void setup() {
+  Serial.begin(115200);
+  WiFi.mode(WIFI_STA);
 ```
-`Serial.readString()` đọc dữ liệu nhập từ bàn phím qua Serial Monitor.  
-`trim()` loại bỏ khoảng trắng hoặc ký tự xuống dòng (`\r`, `\n`).  
-Vòng lặp `while` giữ cho đến khi người dùng nhập xong.  
-Làm tương tự với mật khẩu.  
+`Serial.begin(115200)`  
+&emsp;Khởi tạo giao tiếp UART (Serial) giữa ESP32 và máy tính.  
+&emsp;Tốc độ truyền dữ liệu là 115200 bit/giây, phù hợp cho debug.  
+&emsp;Mọi lệnh `Serial.print()` sau này sẽ hiển thị trên Serial Monitor của Arduino IDE.  
+`WiFi.mode(WIFI_STA)`   
+&emsp;Đặt ESP32 ở chế độ trạm (Station mode).  
+&emsp;Ở chế độ này, ESP32 hoạt động như một thiết bị WiFi thông thường, kết nối vào router thay vì phát WiFi.  
 
-5. Kết nối WiFi  
+```python
+  Serial.println("\nNhập tên wifi");
+  while(ssid_st.length()==0){
+    ssid_st=Serial.readString();
+    ssid_st.trim();
+  }
+```
+In yêu cầu nhập tên WiFi (SSID).  
+Dùng `Serial.readString()` để đọc dữ liệu nhập từ người dùng qua Serial Monitor.  
+`trim()` loại bỏ khoảng trắng hoặc ký tự xuống dòng dư thừa.  
+Vòng `while` giữ cho chương trình dừng lại cho đến khi người dùng nhập xong SSID.  
+
+```python
+  delay(1000);
+
+  Serial.println("Nhập pass wifi");
+  while(pass_st.length()==0){
+    pass_st=Serial.readString();
+    pass_st.trim();
+  }
+```
+`delay(1000)` tạm dừng 1 giây để đảm bảo Serial có thời gian xử lý.  
+Sau đó chương trình yêu cầu người dùng nhập mật khẩu WiFi (`pass_st`).  
+Cách đọc và xử lý tương tự phần nhập SSID ở trên.  
+
 ```python
 WiFi.begin(ssid_st.c_str(), pass_st.c_str());
-``` 
-Bắt đầu kết nối WiFi.  
-`c_str()` chuyển kiểu `String` sang dạng chuỗi ký tự (`const char*`) để hàm `WiFi.begin()` hiểu. 
+```
+`WiFi.begin()`: Hàm bắt đầu quá trình kết nối tới WiFi.  
+Tham số:  
+&emsp;`ssid_st.c_str()` → chuyển chuỗi kiểu `String` sang `const char*` để tương thích với hàm.  
+&emsp;`pass_st.c_str()` → mật khẩu WiFi.  
+Sau khi gọi, ESP32 sẽ tự động tìm mạng trùng SSID và thử kết nối.  
 
-6. Kiểm tra kết nối
 ```python
-while (WiFi.status() != WL_CONNECTED && n < 20) {
+int n=0;
+while(WiFi.status()!= WL_CONNECTED && n<20 ){
   delay(1000);
   Serial.print(".");
   n++;
 }
 ```
-Mỗi giây kiểm tra một lần xem đã kết nối chưa.  
-Nếu sau 20 lần (20 giây) vẫn chưa kết nối, thoát vòng lặp.  
+Kiểm tra trạng thái kết nối với WiFi.  
+`WiFi.status()` trả về mã trạng thái (ví dụ: `WL_CONNECTED` nếu đã kết nối).  
+Nếu chưa kết nối, in ra dấu “.” mỗi giây, thử lại tối đa 20 lần (20 giây).  
 
-7. Kết quả
 ```python
-if (WiFi.status() == WL_CONNECTED) {
+if (WiFi.status()== WL_CONNECTED) {
   Serial.println("\nST IP: ");
   Serial.print(WiFi.localIP());
-}
-else Serial.println("SSID hoặc pass không đúng");
-``` 
-Nếu kết nối thành công → in địa chỉ IP của ESP32.  
-Nếu thất bại → thông báo lỗi.  
+  Serial.print("\n");
+} else Serial.println("SSID hoặc pass không đúng");
+```
+Nếu ESP32 đã kết nối thành công:  
+&emsp;In ra địa chỉ IP mà router cấp (`WiFi.localIP()`).  
+Nếu thất bại sau 20 giây → báo lỗi "SSID hoặc pass không đúng".  
 
-# Kết quả khi chạy  
-Ví dụ khi nhập đúng:  
+Kết quả thực thi  
+Sau khi nạp code, Serial Monitor sẽ hiển thị:  
+&emsp;1. Yêu cầu người dùng nhập SSID và mật khẩu.  
+&emsp;2. Hiển thị tiến trình kết nối (bằng dấu “.”).  
+&emsp;3. Nếu thành công → in IP.  
+&emsp;4. Nếu thất bại → báo lỗi.  
+Ví dụ:  
 ```python
 Nhập tên wifi
-MyHomeWiFi
+MyHome
 Nhập pass wifi
 12345678
-................
+....................
 ST IP:
-192.168.1.104
+192.168.1.37
 ```
-Nếu nhập sai:  
-```python
-SSID hoặc pass không đúng
-``` 
 
 # Part 2: Esp32 AP  
 Mô tả hoạt động      
@@ -597,6 +623,224 @@ Kết quả thực thi
 &emsp;Sẵn sàng lắng nghe TCP trên cổng 80.  
 &emsp;Sẵn sàng gửi/nhận dữ liệu TCP & UDP. 
  
+# Part 5: Thao tác nâng cao
+Mô tả tổng quan:  
+1. Người dùng nhập thông tin mạng WiFi (SSID và password) qua Serial Monitor.  
+2. Kết nối ESP32 vào mạng WiFi ở chế độ Station (WIFI_STA).  
+3. Tự động quét (scan) và liệt kê các mạng WiFi xung quanh.  
+4. Tự động thử kết nối lại (reconnect) nếu mất WiFi.  
+5. In ra thông tin kết nối WiFi (RSSI, IP, MAC).  
+Chương trình gồm 3 hàm chức năng chính:  
+&emsp;`auto_reconnect()` — Tự động kết nối lại WiFi khi mất.  
+&emsp;`thong_tin_WiFi()` — Hiển thị thông tin mạng hiện tại.  
+&emsp;`scan()` — Quét và liệt kê các mạng WiFi khả dụng.  
+
+# Các hàm chính
+1. `Hàm auto_reconnect()`
+Mục đích: Tự động kiểm tra và kết nối lại WiFi nếu ESP32 bị mất kết nối.
+
+```python
+void auto_reconnect(){
+  int n=0;
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("Mất kết nối WiFi! Đang thử kết nối lại...");
+    WiFi.reconnect();
+    while (WiFi.status() != WL_CONNECTED && n<10) {
+      n++;
+      delay(1000);
+      Serial.print(".");
+    }
+    if (WiFi.status() == WL_CONNECTED) {
+      Serial.println("Kết nối lại thành công!");
+    } else {
+      Serial.println("Kết nối lại thất bại!");
+    }
+  }
+}
+
+```
+`void auto_reconnect()`	Khai báo hàm không có tham số và không trả về giá trị.  
+`int n=0;`	Biến đếm số lần thử kết nối lại, giới hạn tối đa 10 lần.  
+`if (WiFi.status() != WL_CONNECTED)` Kiểm tra nếu trạng thái WiFi không phải đang kết nối.  
+`Serial.println("Mất kết nối...")`	In thông báo lên màn hình Serial.  
+`WiFi.reconnect();`	Gọi hàm có sẵn trong thư viện `<WiFi.h>` để thử kết nối lại mạng cũ.  
+`while (WiFi.status() != WL_CONNECTED && n<10)`	Lặp tối đa 10 lần, mỗi lần cách nhau 1 giây, cho đến khi WiFi được kết nối.  
+`delay(1000); Serial.print(".");`	Tạm dừng 1 giây và in dấu “.” thể hiện tiến trình.  
+`if (WiFi.status() == WL_CONNECTED)`	Nếu kết nối thành công sau vòng lặp → in thông báo.  
+`else Serial.println("Kết nối lại thất bại!");`	Nếu không kết nối được sau 10 giây → báo lỗi.  
+
+Kết quả thực thi: ESP32 tự động phát hiện khi mất mạng và thử kết nối lại, tránh phải reset thủ công.  
+
+2. `Hàm thong_tin_WiFi()`
+Mục đích: Hiển thị thông tin chi tiết của mạng WiFi đang kết nối.
+```python
+void thong_tin_WiFi(){
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.printf("  • RSSI: %d dBm\n", WiFi.RSSI());
+    Serial.printf("  • IP: %s\n", WiFi.localIP().toString().c_str());
+    Serial.printf("  • MAC: %s\n", WiFi.macAddress().c_str());
+  }
+}
+```
+`void thong_tin_WiFi()`	Hàm không tham số, không trả về.  
+`if (WiFi.status() == WL_CONNECTED)`	Chỉ in thông tin nếu ESP32 đang kết nối mạng.  
+`Serial.printf(" • RSSI: %d dBm\n", WiFi.RSSI());`	In độ mạnh tín hiệu WiFi (RSSI) – đơn vị dBm. Giá trị khoảng -30 đến -90.  
+`Serial.printf(" • IP: %s\n", WiFi.localIP().toString().c_str());`	Lấy và in địa chỉ IP cục bộ mà router cấp cho ESP32.  
+`Serial.printf(" • MAC: %s\n", WiFi.macAddress().c_str());`	Lấy địa chỉ MAC vật lý của ESP32 (định danh duy nhất của thiết bị).  
+
+&emsp;Kết quả thực thi:  
+In ra màn hình Serial ba dòng thông tin:  
+```python
+• RSSI: -55 dBm
+• IP: 192.168.1.105
+• MAC: 24:6F:28:3B:AA:1F
+```
+3. `Hàm scan()`
+Mục đích: Quét toàn bộ các mạng WiFi xung quanh và hiển thị tên, tín hiệu của từng mạng.  
+```python
+void scan(){
+  if(!mu3){
+    WiFi.disconnect();
+    Serial.println("Scanning...");
+    mu3=true;
+  }
+  int n = WiFi.scanNetworks();
+  if (n>0){
+    Serial.printf("Đã tìm thấy: %d SSID \n", n);
+    for(int i=0; i<n; i++){
+      Serial.printf("%2d. SSID: %s | Tín hiệu: %d dBm \n",
+      i+1, WiFi.SSID(i).c_str(), WiFi.RSSI(i));
+      delay(50);
+    }
+  } else if (n == 0) {
+    Serial.println("Không tìm thấy mạng nào.");
+  }
+  delay(3456);
+}
+```
+`if(!mu3)`	Kiểm tra cờ `mu3` để chỉ hiển thị thông báo “Scanning...” một lần.  
+`WiFi.disconnect();`	Ngắt kết nối hiện tại để có thể quét toàn bộ mạng xung quanh.  
+`Serial.println("Scanning...");`	In ra thông báo đang quét.  
+`mu3=true;`	Đánh dấu đã quét một lần, không lặp thông báo.  
+`int n = WiFi.scanNetworks();` Gọi hàm quét WiFi có sẵn trong thư viện, trả về số mạng tìm thấy.  
+`if (n>0)`	Nếu có mạng, tiếp tục liệt kê từng mạng.  
+`Serial.printf("Đã tìm thấy: %d SSID \n", n);`	In tổng số mạng WiFi tìm thấy.  
+`for(int i=0; i<n; i++)`	Duyệt qua từng mạng WiFi.  
+`WiFi.SSID(i)`	Lấy tên (SSID) của mạng thứ i.  
+`WiFi.RSSI(i)`	Lấy cường độ tín hiệu (độ mạnh sóng) của mạng thứ i.  
+`Serial.printf("%2d. SSID: %s | Tín hiệu %d dBm \n", i+1, ...)` Hàm in ra dữ liệu theo định dạng.  
+&emsp;`%2d`	In số nguyên (ở đây là i+1) và đảm bảo có ít nhất 2 ký tự chiều rộng.  
+→ Ví dụ: nếu `i=0` thì in “ 1.”, nếu `i=9` thì in “10.”  
+&emsp;`%s`	In chuỗi ký tự (ở đây là tên mạng WiFi).  
+&emsp;`%d`	In số nguyên (ở đây là cường độ tín hiệu, đơn vị dBm).  
+&emsp;`\n`	Xuống dòng sau khi in xong.  
+&emsp;`i+1`	Vì mảng bắt đầu từ 0, nên cộng 1 để thành số thứ tự hiển thị bắt đầu từ 1.  
+&emsp;`WiFi.SSID(i).c_str()`	Lấy tên mạng WiFi thứ i dưới dạng chuỗi ký tự chuẩn C (kiểu `const char*`).  
+&emsp;`WiFi.RSSI(i)`	Lấy độ mạnh tín hiệu của mạng thứ i (đơn vị dBm, càng gần 0 thì càng mạnh).  
+`delay(50);`	Nghỉ ngắn giữa mỗi lần in để tránh tràn dữ liệu Serial.  
+`else if (n == 0)`	Nếu không có mạng nào được tìm thấy → in thông báo.  
+`delay(3456);`	Dừng lại khoảng 3,4 giây để tránh quét liên tục làm treo thiết bị.  
+
+&emsp;Kết quả thực thi:  
+Ví dụ khi chạy:
+```python
+Scanning...
+Đã tìm thấy: 3 SSID 
+ 1. SSID: TP-Link_5G | Tín hiệu: -49 dBm 
+ 2. SSID: MyHome | Tín hiệu: -67 dBm 
+ 3. SSID: Cafe_Free | Tín hiệu: -85 dBm
+```
+# Phần setup
+Mục đích: Thiết lập chế độ hoạt động, nhập thông tin mạng và kết nối WiFi.  
+```python
+void setup() {
+  Serial.begin(115200);
+  WiFi.mode(WIFI_STA);
+```
+`Serial.begin(115200)`  
+&emsp;Khởi tạo giao tiếp UART (Serial) giữa ESP32 và máy tính.  
+&emsp;Tốc độ truyền dữ liệu là 115200 bit/giây, phù hợp cho debug.  
+&emsp;Mọi lệnh `Serial.print()` sau này sẽ hiển thị trên Serial Monitor của Arduino IDE.  
+`WiFi.mode(WIFI_STA)`   
+&emsp;Đặt ESP32 ở chế độ trạm (Station mode).  
+&emsp;Ở chế độ này, ESP32 hoạt động như một thiết bị WiFi thông thường, kết nối vào router thay vì phát WiFi.  
+
+```python
+  Serial.println("\nNhập tên wifi");
+  while(ssid_st.length()==0){
+    ssid_st=Serial.readString();
+    ssid_st.trim();
+  }
+```
+In yêu cầu nhập tên WiFi (SSID).  
+Dùng `Serial.readString()` để đọc dữ liệu nhập từ người dùng qua Serial Monitor.  
+`trim()` loại bỏ khoảng trắng hoặc ký tự xuống dòng dư thừa.  
+Vòng `while` giữ cho chương trình dừng lại cho đến khi người dùng nhập xong SSID.  
+
+```python
+  delay(1000);
+
+  Serial.println("Nhập pass wifi");
+  while(pass_st.length()==0){
+    pass_st=Serial.readString();
+    pass_st.trim();
+  }
+```
+`delay(1000)` tạm dừng 1 giây để đảm bảo Serial có thời gian xử lý.  
+Sau đó chương trình yêu cầu người dùng nhập mật khẩu WiFi (`pass_st`).  
+Cách đọc và xử lý tương tự phần nhập SSID ở trên.  
+
+```python
+WiFi.begin(ssid_st.c_str(), pass_st.c_str());
+```
+`WiFi.begin()`: Hàm bắt đầu quá trình kết nối tới WiFi.  
+Tham số:  
+&emsp;`ssid_st.c_str()` → chuyển chuỗi kiểu `String` sang `const char*` để tương thích với hàm.  
+&emsp;`pass_st.c_str()` → mật khẩu WiFi.  
+Sau khi gọi, ESP32 sẽ tự động tìm mạng trùng SSID và thử kết nối.  
+
+```python
+int n=0;
+while(WiFi.status()!= WL_CONNECTED && n<20 ){
+  delay(1000);
+  Serial.print(".");
+  n++;
+}
+```
+Kiểm tra trạng thái kết nối với WiFi.  
+`WiFi.status()` trả về mã trạng thái (ví dụ: `WL_CONNECTED` nếu đã kết nối).  
+Nếu chưa kết nối, in ra dấu “.” mỗi giây, thử lại tối đa 20 lần (20 giây).  
+
+```python
+if (WiFi.status()== WL_CONNECTED) {
+  Serial.println("\nST IP: ");
+  Serial.print(WiFi.localIP());
+  Serial.print("\n");
+} else Serial.println("SSID hoặc pass không đúng");
+```
+Nếu ESP32 đã kết nối thành công:  
+&emsp;In ra địa chỉ IP mà router cấp (`WiFi.localIP()`).  
+Nếu thất bại sau 20 giây → báo lỗi "SSID hoặc pass không đúng".  
+
+Kết quả thực thi  
+Sau khi nạp code, Serial Monitor sẽ hiển thị:  
+&emsp;1. Yêu cầu người dùng nhập SSID và mật khẩu.  
+&emsp;2. Hiển thị tiến trình kết nối (bằng dấu “.”).  
+&emsp;3. Nếu thành công → in IP.  
+&emsp;4. Nếu thất bại → báo lỗi.  
+Ví dụ:  
+```python
+Nhập tên wifi
+MyHome
+Nhập pass wifi
+12345678
+....................
+ST IP:
+192.168.1.37
+```
+
+
+
 
 
 
