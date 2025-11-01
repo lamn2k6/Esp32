@@ -1,5 +1,5 @@
 # Part 1: Esp32 STA
-# Mô tả hoạt động:
+Mô tả hoạt động:
 1.ESP32 khởi động ở chế độ WIFI_AP_STA (vừa làm điểm truy cập, vừa có thể kết nối WiFi khác).
 2.Người dùng nhập tên WiFi (SSID) và mật khẩu (password) qua Serial Monitor.
 3.ESP32 sử dụng thông tin vừa nhập để kết nối mạng WiFi.
