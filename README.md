@@ -143,6 +143,7 @@ void setup() {
   delay(2000);
   Serial.print("AP IP: ");
   Serial.print(WiFi.softAPIP());
+}
 ``` 
 # Giải thích chi tiết từng phần
 1. Thư viện  
